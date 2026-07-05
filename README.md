@@ -1,10 +1,12 @@
 <div align="center">
-  [![Python](https://img.shields.io/badge/Python-3.10-blue.svg)](https://www.python.org/)
-  [![FastAPI](https://img.shields.io/badge/FastAPI-0.104-009688.svg)](https://fastapi.tiangolo.com/)
-  [![React](https://img.shields.io/badge/React-18.0-61DAFB.svg)](https://reactjs.org/)
-  [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED.svg)](https://www.docker.com/)
-  [![scikit-learn](https://img.shields.io/badge/scikit--learn-1.3-F7931E.svg)](https://scikit-learn.org/)
-  [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+  <p>
+    <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.10-blue.svg" alt="Python"></a>
+    <a href="https://fastapi.tiangolo.com/"><img src="https://img.shields.io/badge/FastAPI-0.104-009688.svg" alt="FastAPI"></a>
+    <a href="https://reactjs.org/"><img src="https://img.shields.io/badge/React-18.0-61DAFB.svg" alt="React"></a>
+    <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/Docker-Compose-2496ED.svg" alt="Docker"></a>
+    <a href="https://scikit-learn.org/"><img src="https://img.shields.io/badge/scikit--learn-1.3-F7931E.svg" alt="scikit-learn"></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
+  </p>
 
   <img src="docs/final_report/figures/high_level_arc.png" alt="High Level Architecture" width="800"/>
 
@@ -59,9 +61,9 @@ The platform operates as a cohesive, distributed system:
 | Retraining workflow | ✅ Implemented | Shadow testing of new candidate models. |
 | Synthetic fault injection | ✅ Implemented | Spikes, gradual drift, and sensor freeze capabilities. |
 | Incident report PDF | ✅ Implemented | Dynamic ReportLab PDF generation for resolved alerts. |
-| NASA Bearing vibration module | 🧭 Roadmap / future work | Initial stubs exist, but edge chunking and FFT pipelines are pending. |
-| MVTec visual inspection module | 🧭 Roadmap / future work | ResNet50 embedder architecture designed, model training pending. |
-| Unified Asset Center | 🧭 Roadmap / future work | Multi-modal fusion of telemetry, vibration, and vision data. |
+| NASA Bearing vibration module | ✅ Implemented | Edge chunking and FFT pipelines are fully active. |
+| MVTec visual inspection module | ✅ Implemented | ResNet50 embedder architecture generating live heatmaps. |
+| Unified Asset Center | ✅ Implemented | Multi-modal fusion of telemetry, vibration, and vision data. |
 
 ## 6. Architecture
 
@@ -90,9 +92,9 @@ flowchart LR
 *   **Nature:** Purely chronological, un-labeled time-series data with known catastrophic mechanical failure events hidden within the timeline.
 *   **Limitations:** It is purely univariate. It lacks the multi-dimensional correlation (e.g., Temperature + Pressure + Vibration) found in true industrial deployments.
 
-**Future / Extension Datasets:**
-*   *NASA Bearing Dataset* for 20kHz acoustic vibration analysis (Roadmap).
-*   *MVTec AD* for optical image anomaly detection (Roadmap).
+**Multi-Modal Datasets Integrated:**
+*   *NASA Bearing Dataset* for 20kHz acoustic vibration analysis.
+*   *MVTec AD* for optical image anomaly detection.
 
 ## 8. Machine Learning Models
 
@@ -146,9 +148,9 @@ The React SPA utilizes TailwindCSS and WebSocket streaming to deliver a premium 
 *   **System Health (Drift):** Gauges tracking the Population Stability Index.
 *   **Demo Control Panel:** Chaos engineering buttons to inject synthetic spikes and drift.
 
-**Roadmap Pages:**
-*   Vibration Health Lab 🧭
-*   Visual Inspection Lab 🧭
+**Multi-Modal Lab Pages:**
+*   Vibration Health Lab ✅
+*   Visual Inspection Lab ✅
 
 ## 12. API Documentation
 
@@ -281,16 +283,16 @@ Real-Time-Anomaly-Detection-for-IoT-Sensor-Streams/
 *   Migration of the SQLite database to TimescaleDB or PostgreSQL.
 
 **Advanced:**
-*   NASA Bearing high-frequency vibration module (Edge FFT to Cloud 1D CNN).
-*   MVTec AD image anomaly detection (ResNet50 embedded heatmaps).
-*   Multi-Modal Unified Asset Center dashboard.
+*   Distributed multi-node edge deployments.
+*   Integration with Apache Kafka for enterprise event streaming.
+*   Reinforcement Learning for automated control corrections.
 
 ## 19. Limitations
 
 *   **Univariate Constraint:** The NAB dataset used is univariate (temperature only), preventing multivariate correlation modeling.
 *   **Simulated Stream:** The system relies on a Python simulator rather than a true MQTT publish/subscribe broker (e.g., Apache Kafka) typical of enterprise deployments.
 *   **SQLite Locking:** Concurrent high-frequency database writes may encounter locking issues; a true production environment requires a dedicated time-series database.
-*   **Vibration/Vision Modules:** Currently in the roadmap planning phase; true multi-modal integration requires physical edge hardware for heavy preprocessing.
+*   **Edge Hardware Simulation:** The Vibration and Vision modules are currently run on simulated edge devices in software; true integration requires physical edge hardware (e.g. NVIDIA Jetson) for heavy preprocessing.
 
 ## 20. Academic Report
 
