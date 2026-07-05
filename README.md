@@ -1,13 +1,14 @@
 <div align="center">
-  <img src="docs/final_report/figures/high_level_arc.png" alt="High Level Architecture" width="800"/>
-  <h1>Real-Time Industrial Anomaly Detection Platform</h1>
-  <p><strong>A Multi-Modal, High-Frequency MLOps Platform for IIoT Predictive Maintenance</strong></p>
-
   [![Python](https://img.shields.io/badge/Python-3.10-blue.svg)](https://www.python.org/)
   [![FastAPI](https://img.shields.io/badge/FastAPI-0.104-009688.svg)](https://fastapi.tiangolo.com/)
   [![React](https://img.shields.io/badge/React-18.0-61DAFB.svg)](https://reactjs.org/)
   [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED.svg)](https://www.docker.com/)
   [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+  <img src="docs/final_report/figures/high_level_arc.png" alt="High Level Architecture" width="800"/>
+  <h1>Real-Time Industrial Anomaly Detection Platform</h1>
+  <p><strong>A Multi-Modal, High-Frequency MLOps Platform for IIoT Predictive Maintenance</strong></p>
+
+
 </div>
 
 ---
