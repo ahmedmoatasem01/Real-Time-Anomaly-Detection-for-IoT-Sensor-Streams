@@ -167,13 +167,13 @@ Crucially, it supports dynamic fault injection via the UI's Demo Control Panel:
 
 ---
 
-## 🗺️ Multi-Modal Expansion Roadmap
+## 🗺️ Multi-Modal Unified Asset Center
 
-The platform is actively expanding into a "Unified Asset Center" capable of processing multiple modalities simultaneously.
+The platform has successfully expanded beyond 1D telemetry into a true "Unified Asset Center" capable of processing multiple modalities simultaneously to detect physical failures across the entire mechanical spectrum.
 
-1.  ✅ **Phase 1: 1D Telemetry (Complete).** Low frequency temperature monitoring.
-2.  ⏳ **Phase 2: High-Frequency Vibration.** Ingesting the 20kHz NASA Bearing dataset. Edge devices will compute Fast Fourier Transforms (FFT) and transmit the resulting arrays to a 1D Convolutional Neural Network for spectral anomaly detection.
-3.  ⏳ **Phase 3: Visual Inspection.** Passing MVTec AD camera frames through a ResNet50 Autoencoder to generate dynamic defect heatmaps for assembly-line quality control.
+1.  ✅ **Phase 1: 1D Telemetry (Complete).** Low frequency temperature monitoring using the Numenta Anomaly Benchmark (NAB). Implemented via Isolation Forest and PyTorch LSTM Autoencoders.
+2.  ✅ **Phase 2: High-Frequency Vibration (Complete).** Ingesting the 20kHz NASA Bearing dataset. Edge devices compute Fast Fourier Transforms (FFT) and transmit the resulting arrays to a 1D Convolutional Neural Network for spectral anomaly detection.
+3.  ✅ **Phase 3: Visual Inspection (Complete).** Passing MVTec AD camera frames through a ResNet50 Autoencoder to generate dynamic defect heatmaps for automated assembly-line quality control.
 
 ---
 
