@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: uvicorn src.api.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models
+      - ./reports:/app/reports
+      - ./data:/app/data
+    environment:
+      - DB_URL=sqlite:///reports/anomaly.db
+      - RAW_CSV=data/raw/realKnownCause/machine_temperature_system_failure.csv
+      - PROCESSED_CSV=data/processed/nab_processed.csv
+      - MODEL_DIR=models
+      - SENSOR_ID=machine_temperature
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api

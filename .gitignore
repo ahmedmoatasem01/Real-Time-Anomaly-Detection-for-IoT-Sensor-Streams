@@ -1,0 +1,42 @@
+# Python Environments
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Environment Variables
+.env
+
+# Node and Frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# Data Directories
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/sample_stream/*
+!data/sample_stream/.gitkeep
+
+# Databases
+*.db
+!data/*.db
+
+# ML Models and Artifacts
+models/*.pkl
+models/*.pt
+models/*.json
+!models/model_registry.json
+reports/figures/*
+!reports/figures/.gitkeep
+
+# Logs
+logs/*
+!logs/.gitkeep
+
+# IDE and OS
+.vscode/
+.ipynb_checkpoints/
+.DS_Store

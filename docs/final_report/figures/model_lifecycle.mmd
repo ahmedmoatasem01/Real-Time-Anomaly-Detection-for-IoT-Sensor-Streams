@@ -1,0 +1,13 @@
+graph LR
+    classDef process fill:#eef2f5,stroke:#9baebf,stroke-width:2px,color:#333
+    classDef output fill:#e8f5e9,stroke:#81c784,stroke-width:2px,color:#333
+    classDef alert fill:#f9f2f4,stroke:#d0a9b5,stroke-width:2px,color:#333
+    
+    Train[Offline Model Training\nScikit-learn / River / PyTorch] --> Eval[Validation & Test Evaluation\nCalculate F1, Precision, Recall]
+    Eval --> Reg[Register in Model Registry JSON\nSave .pkl, Threshold, Metrics]
+    Reg --> Promote[Operator UI Review\nClick 'Promote to Production']
+    Promote --> Inf[Real-Time FastAPI Inference\nAssign Scores & Alerts]
+    Inf --> Drift[Drift Detection Engine\nCalculate PSI vs Baseline]
+    Drift -- PSI > 0.2 Trigger --> Train
+    
+    class Train,Eval,Reg,Promote,Inf,Drift process

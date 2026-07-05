@@ -1,0 +1,28 @@
+sequenceDiagram
+    participant Sim as Stream Simulator
+    participant API as FastAPI Router
+    participant Buffer as InferenceService (Deque)
+    participant Model as ML Production Model
+    participant DB as SQLite DB
+    participant WS as WebSocket Clients
+    
+    Sim->>API: POST /predict {"sensor_id": "T-01", "value": 75.4}
+    API->>Buffer: Append to Rolling Window (MaxLen=65)
+    
+    alt Window Size < 65
+        Buffer-->>API: Return Wait Status
+        API-->>Sim: 202 Accepted (Warming Up)
+    else Window Size == 65
+        Buffer->>Buffer: Execute Feature Engineering (Numpy)
+        Buffer-->>API: Return Feature Vector [1xN]
+        API->>Model: predict(Feature Vector)
+        Model-->>API: Return Anomaly Score (float)
+        
+        API->>API: Evaluate Score vs Model Threshold
+        alt Score > Threshold
+            API->>DB: INSERT INTO alerts (Critical)
+            API->>WS: Broadcast Alert Event JSON
+        end
+        API->>WS: Broadcast Standard Telemetry JSON
+        API-->>Sim: 200 OK (Processed)
+    end

@@ -1,0 +1,14 @@
+graph LR
+    classDef data fill:#f9f2f4,stroke:#d0a9b5,stroke-width:2px,color:#333
+    classDef process fill:#eef2f5,stroke:#9baebf,stroke-width:2px,color:#333
+    classDef output fill:#e8f5e9,stroke:#81c784,stroke-width:2px,color:#333
+    
+    Raw[(Raw CSV\nNAB Data)] --> Sort[Sort Chronologically\nby Timestamp]
+    Sort --> Impute[Missing Value Imputation\nForward-Fill]
+    Impute --> Split[Temporal Data Split\n50% Train, 20% Val, 30% Test]
+    Split --> FitScale[Fit StandardScaler\nStrictly on Train Split]
+    FitScale --> TransScale[Transform Val/Test\nusing Train Params]
+    TransScale --> Save[(Processed Datasets\nReady for Inference)]
+    
+    class Raw,Save data
+    class Sort,Impute,Split,FitScale,TransScale process

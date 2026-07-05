@@ -1,0 +1,26 @@
+{
+  "datasets": [
+    {
+      "name": "NAB Machine Temperature",
+      "modality": "time_series",
+      "source": "kaggle:boltzmannbrain/nab",
+      "rows": 22695,
+      "labels": "anomaly windows",
+      "used_for": "live stream anomaly detection"
+    },
+    {
+      "name": "NASA Bearing",
+      "modality": "vibration",
+      "source": "kaggle:vinayak123tyagi/bearing-dataset",
+      "labels": "run-to-failure (weak)",
+      "used_for": "vibration predictive maintenance"
+    },
+    {
+      "name": "MVTec AD",
+      "modality": "image",
+      "source": "mvtec",
+      "labels": "normal/defect + masks",
+      "used_for": "visual inspection"
+    }
+  ]
+}

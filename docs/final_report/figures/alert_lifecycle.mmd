@@ -1,0 +1,25 @@
+stateDiagram-v2
+    [*] --> New: Anomaly Threshold Breached
+    
+    state New {
+        [*] --> Unassigned
+    }
+    
+    New --> Acknowledged: Operator clicks Ack
+    
+    state Acknowledged {
+        [*] --> Assigned
+    }
+    
+    Acknowledged --> Investigating: Maintenance Dispatched
+    
+    state Investigating {
+        [*] --> Analyzing
+        Analyzing --> Repairing
+    }
+    
+    Investigating --> Resolved: True Anomaly (Fixed)
+    Investigating --> FalseAlarm: Normal Shift / Glitch
+    
+    Resolved --> [*]: Require Operator Note
+    FalseAlarm --> [*]: Trigger Model Tuning?

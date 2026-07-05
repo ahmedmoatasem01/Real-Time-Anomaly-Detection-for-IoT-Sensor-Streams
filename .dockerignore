@@ -1,0 +1,27 @@
+# Python / environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+.env
+
+# Node / Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+npm-debug.log
+
+# IDEs
+.vscode/
+.idea/
+
+# Data & Models (we want to map these in via volume or generate them on the fly if needed, but keeping them out of build context makes the image smaller. Actually, the models are needed inside, let's include them. Exclude only raw data if large)
+data/raw/
+data/sample_stream/
+reports/
+
+# Docker
+docker-compose.yml
+docker-compose.override.yml

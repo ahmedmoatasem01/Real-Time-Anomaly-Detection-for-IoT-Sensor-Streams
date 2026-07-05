@@ -1,0 +1,60 @@
+graph TD
+    classDef data fill:#f9f2f4,stroke:#d0a9b5,stroke-width:2px,color:#333
+    classDef api fill:#eef2f5,stroke:#9baebf,stroke-width:2px,color:#333
+    classDef ml fill:#fff3e0,stroke:#ffb74d,stroke-width:2px,color:#333
+    classDef ui fill:#e3f2fd,stroke:#64b5f6,stroke-width:2px,color:#333
+    classDef db fill:#e8f5e9,stroke:#81c784,stroke-width:2px,color:#333
+
+    subgraph Edge_Simulation
+        Stream[Stream Simulator\nReplays NAB Data]
+        Fault[Synthetic Fault\nInjector]
+        Stream --> Fault
+    end
+
+    subgraph Backend_FastAPI
+        API[FastAPI /predict]
+        Buffer[Sliding Buffer\nMaxLen=65]
+        FE[Feature Engineering\nMean, Std, FFT]
+        Score[Model Inference]
+        Thresh[Thresholding & Alert Generation]
+        
+        API --> Buffer
+        Buffer --> FE
+        FE --> Score
+        Score --> Thresh
+    end
+
+    subgraph Machine_Learning
+        Reg[Model Registry JSON]
+        Iso[Isolation Forest\nProduction]
+        River[River ADWIN\nShadow]
+        
+        Reg -.-> Iso
+        Iso -.-> Score
+        River -.-> Score
+    end
+
+    subgraph Storage
+        DB[(SQLite DB)]
+        Thresh --> DB
+    end
+
+    subgraph Frontend_React
+        WS[WebSocket Client]
+        Live[Live Monitor]
+        AlertUI[Alert Center]
+        Retrain[Retraining Center]
+        
+        WS --> Live
+        WS --> AlertUI
+    end
+
+    Fault -- HTTP POST --> API
+    Thresh -- WebSocket Broadcast --> WS
+    DB -. HTTP GET .-> Retrain
+
+    class Stream,Fault data
+    class API,Buffer,FE,Score,Thresh api
+    class Reg,Iso,River ml
+    class WS,Live,AlertUI,Retrain ui
+    class DB db

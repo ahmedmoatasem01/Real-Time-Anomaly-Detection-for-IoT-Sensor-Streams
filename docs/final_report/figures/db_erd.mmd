@@ -1,0 +1,31 @@
+erDiagram
+    READINGS {
+        integer id PK
+        string sensor_id
+        float value
+        datetime timestamp
+    }
+    
+    ALERTS {
+        integer id PK
+        string sensor_id
+        float anomaly_score
+        float model_threshold
+        string severity "low, medium, high, critical"
+        string status "new, acknowledged, investigating, resolved, false_alarm"
+        string operator_note
+        datetime created_at
+        datetime resolved_at
+    }
+    
+    MODELS {
+        string uuid PK
+        string name
+        boolean is_production
+        float threshold
+        string pkl_filepath
+        datetime created_at
+    }
+    
+    READINGS }|--|| ALERTS : "Triggers"
+    MODELS ||--o{ ALERTS : "Calculates Score For"
