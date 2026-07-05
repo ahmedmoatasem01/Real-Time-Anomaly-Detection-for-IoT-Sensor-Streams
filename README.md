@@ -3,185 +3,296 @@
   [![FastAPI](https://img.shields.io/badge/FastAPI-0.104-009688.svg)](https://fastapi.tiangolo.com/)
   [![React](https://img.shields.io/badge/React-18.0-61DAFB.svg)](https://reactjs.org/)
   [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED.svg)](https://www.docker.com/)
+  [![scikit-learn](https://img.shields.io/badge/scikit--learn-1.3-F7931E.svg)](https://scikit-learn.org/)
   [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
   <img src="docs/final_report/figures/high_level_arc.png" alt="High Level Architecture" width="800"/>
+
   <h1>Real-Time Industrial Anomaly Detection Platform</h1>
-  <p><strong>A Multi-Modal, High-Frequency MLOps Platform for IIoT Predictive Maintenance</strong></p>
+  <p><strong>A real-time MLOps platform for industrial IoT anomaly detection, model comparison, alert management, drift monitoring, and predictive maintenance expansion.</strong></p>
 
-
+  **[👉 Read the Final Academic Report PDF](docs/final_report/FINAL_PROJECT_REPORT.pdf)**
 </div>
 
 ---
 
-## 📖 Table of Contents
-1. [Project Overview](#-project-overview)
-2. [Core Architecture](#-core-architecture)
-3. [Key Features](#-key-features)
-4. [Machine Learning Algorithms](#-machine-learning-algorithms)
-5. [Installation & Setup](#-installation--setup)
-6. [API Documentation](#-api-documentation)
-7. [The Stream Simulator](#-the-stream-simulator)
-8. [Multi-Modal Expansion Roadmap](#-multi-modal-expansion-roadmap)
-9. [Full Academic Report](#-full-academic-report)
+## 2. Project Overview
 
----
+This project is a complete, real-time Machine Learning Operations (MLOps) platform designed to ingest high-frequency telemetry from industrial IoT sensors and detect mechanical anomalies before they lead to catastrophic equipment failure. 
 
-## 🏭 Project Overview
-Industrial machinery generates millions of data points per day. Traditional SCADA (Supervisory Control and Data Acquisition) systems rely on static, human-defined thresholds (e.g., "Alert if temperature > 85°C"). This approach is fundamentally flawed for complex, degrading machinery, leading to high false-alarm rates or catastrophic missed detections.
+Rather than serving as a static dashboard, this platform is an active, stateful inference engine. It utilizes an asynchronous FastAPI backend to perform rolling feature engineering on the fly and compares the incoming data streams against a dynamic registry of unsupervised Machine Learning models. The platform seamlessly handles the entire predictive maintenance lifecycle: from raw data ingestion and anomaly thresholding to human-in-the-loop alert resolution and statistical data drift detection.
 
-This platform replaces static thresholds with **Dynamic, Unsupervised Machine Learning**. It ingests high-frequency real-time telemetry from IoT edge devices, performs instantaneous feature engineering (Rolling Statistics, EWMA, Fast Fourier Transforms) via a stateful sliding buffer, and evaluates the signal against an active ML model to detect degradation days before a physical failure occurs.
+## 3. Business Problem
 
----
+*   **Static Thresholds are Weak:** Industrial machines naturally fluctuate based on load, ambient temperature, and age. Traditional SCADA thresholds (e.g., "Alert if > 80°C") fail to capture these non-linear dynamics.
+*   **Anomalies are Rare:** In factory environments, 99.9% of data is normal. Labeled failure data is virtually non-existent, making standard supervised ML impossible.
+*   **False Alarms & Missed Alarms Matter:** A high false alarm rate causes operator fatigue (ignoring alerts), while a single missed alarm can cost millions in downtime.
+*   **Real-Time Reduces Downtime:** Detecting the microscopic statistical signatures of a failing bearing hours before it snaps allows for scheduled, rather than emergency, maintenance.
 
-## 🏗️ Core Architecture
+## 4. Solution Summary
 
-The system is built as a distributed, decoupled MLOps ecosystem capable of zero-downtime hot-swapping of predictive models.
+The platform operates as a cohesive, distributed system:
+*   **Data Pipeline:** A multi-threaded Stream Simulator replays historical data, pumping simulated real-time payloads.
+*   **Feature Engineering:** A stateful `collections.deque` buffer instantly calculates rolling standard deviations, means, and Fast Fourier Transforms.
+*   **Multi-Model ML Engine:** Supports multiple unsupervised algorithms (Isolation Forest, One-Class SVM, LSTM Autoencoders).
+*   **Model Registry:** Facilitates zero-downtime hot-swapping between models via a persistent JSON registry.
+*   **FastAPI Inference API:** An asynchronous ingestion gateway ensuring high throughput and low latency.
+*   **WebSocket Streaming:** Broadcasts real-time anomaly scores and original telemetry to connected clients.
+*   **Alert Lifecycle:** A state-machine tracking system forcing human operators to acknowledge, investigate, and resolve alerts with qualitative feedback.
+*   **React Platform:** A modern, dark-mode SPA displaying 50 FPS real-time SVGs, system health, and model metrics.
+*   **Docker Deployment:** Fully containerized for instant, reproducible deployments.
 
-<div align="center">
-  <img src="docs/final_report/figures/inference_sequence.png" alt="Inference Sequence" width="700"/>
-  <p><em>Asynchronous Non-Blocking Inference Engine via FastAPI and collections.deque</em></p>
-</div>
+## 5. Current Implementation Status
 
-### System Components:
-*   **Edge Data Simulator:** A highly configurable Python synthetic data injector capable of replaying the Numenta Anomaly Benchmark (NAB) dataset while supporting dynamic fault injection (Spikes, Drift, Noise).
-*   **FastAPI Inference Engine:** An asynchronous ingestion gateway that calculates $O(1)$ complexity rolling features and evaluates them against the active scikit-learn model in milliseconds.
-*   **SQLite / Database Layer:** A persistent storage engine for historical telemetry, alert state machines, and the JSON-based Model Registry.
-*   **React + TailwindCSS Frontend:** A dark-mode, glassmorphism UI designed for low-light factory control rooms. It utilizes WebSocket streams to render real-time charts via `Recharts` at 50 FPS.
+| Feature | Status | Notes |
+| :--- | :--- | :--- |
+| NAB temperature stream | ✅ Implemented | Using the Numenta Anomaly Benchmark machine temperature dataset. |
+| Stream simulator | ✅ Implemented | Multi-threaded synthetic historical replay with fault injection. |
+| FastAPI backend | ✅ Implemented | Fully asynchronous ASGI endpoints. |
+| SQLite database | ✅ Implemented | Used for persistent alert lifecycle management and readings. |
+| WebSocket streaming | ✅ Implemented | Broadcasting telemetry updates at high frequency. |
+| React frontend | ✅ Implemented | Live dashboard, model lab, and alert center. |
+| Model comparison | ✅ Implemented | Automated F1 optimization offline scripts. |
+| Model registry | ✅ Implemented | Zero-downtime model promotion workflow. |
+| Alert lifecycle | ✅ Implemented | State machine: New $\rightarrow$ Acknowledged $\rightarrow$ Investigating $\rightarrow$ Resolved. |
+| Drift detection | ✅ Implemented | Population Stability Index (PSI) calculation engine. |
+| Retraining workflow | ✅ Implemented | Shadow testing of new candidate models. |
+| Synthetic fault injection | ✅ Implemented | Spikes, gradual drift, and sensor freeze capabilities. |
+| Incident report PDF | ✅ Implemented | Dynamic ReportLab PDF generation for resolved alerts. |
+| NASA Bearing vibration module | 🧭 Roadmap / future work | Initial stubs exist, but edge chunking and FFT pipelines are pending. |
+| MVTec visual inspection module | 🧭 Roadmap / future work | ResNet50 embedder architecture designed, model training pending. |
+| Unified Asset Center | 🧭 Roadmap / future work | Multi-modal fusion of telemetry, vibration, and vision data. |
 
----
+## 6. Architecture
 
-## ✨ Key Features
+**Data Flow Sequence:**
+`CSV` $\rightarrow$ `Stream Simulator` $\rightarrow$ `FastAPI /predict` $\rightarrow$ `Deque Buffer` $\rightarrow$ `Feature Engineering` $\rightarrow$ `Model Inference` $\rightarrow$ `Database Insert` $\rightarrow$ `WebSocket Broadcast` $\rightarrow$ `React Frontend`
 
-### 1. Zero-Downtime Model Hot-Swapping
-The platform features an active **Model Registry**. Data Science teams can train candidate models offline on new historical data. Operators can review the F1-Scores and, with a single click, promote a candidate model to production. The FastAPI backend instantaneously loads the new `.pkl` artifact into memory between WebSocket frames.
+```mermaid
+flowchart LR
+    A[NAB CSV Dataset] --> B[Preprocessing Pipeline]
+    B --> C[Feature Engineering]
+    C --> D[Model Training]
+    D --> E[Model Registry]
+    F[Stream Simulator] --> G[FastAPI /predict]
+    E --> G
+    G --> H[SQLite Database]
+    G --> I[WebSocket Broadcast]
+    I --> J[React Frontend]
+    H --> J
+```
 
-<div align="center">
-  <img src="docs/final_report/figures/model_lifecycle.png" alt="Model Lifecycle" width="600"/>
-</div>
+## 7. Dataset
 
-### 2. Strict Alert Lifecycle Management
-Mathematical anomalies are useless if they do not drive human action. The system enforces a rigorous Alert State Machine (New $\rightarrow$ Acknowledged $\rightarrow$ Investigating $\rightarrow$ Resolved/False Alarm). Operators are forced to input qualitative text explanations before resolving an alert, building a supervised dataset out of an unsupervised environment.
+**Main Dataset: Numenta Anomaly Benchmark (NAB) - `machine_temperature_system_failure.csv`**
+*   **Selection Rationale:** Widely regarded as the industry standard for evaluating unsupervised time-series anomaly detection.
+*   **Columns:** `timestamp` (YYYY-MM-DD HH:MM:SS), `value` (Sensor reading in Fahrenheit).
+*   **Nature:** Purely chronological, un-labeled time-series data with known catastrophic mechanical failure events hidden within the timeline.
+*   **Limitations:** It is purely univariate. It lacks the multi-dimensional correlation (e.g., Temperature + Pressure + Vibration) found in true industrial deployments.
 
-<div align="center">
-  <img src="docs/final_report/figures/alert_lifecycle.png" alt="Alert Lifecycle" width="400"/>
-</div>
+**Future / Extension Datasets:**
+*   *NASA Bearing Dataset* for 20kHz acoustic vibration analysis (Roadmap).
+*   *MVTec AD* for optical image anomaly detection (Roadmap).
 
-### 3. Population Stability Index (PSI) Drift Detection
-The platform continuously compares the distribution of the live stream against the original training data distribution. If the machinery permanently alters its behavior (Concept Drift), the PSI metric triggers a warning, recommending that the engineering team retrain the models.
+## 8. Machine Learning Models
 
----
+*Note: The following metrics reflect final test-set evaluations retrieved from `reports/evaluation_results.csv`.*
 
-## 🧠 Machine Learning Algorithms
+| Model | Type | Status | Artifact | Purpose | F1-Score |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Isolation Forest** | Ensemble Tree | ✅ Implemented | `isolation_forest.pkl` | **Production Default.** High accuracy, ultra-low latency. | 0.946 |
+| **LSTM Autoencoder** | Deep Learning | ✅ Implemented | `lstm_autoencoder.pth` | Advanced temporal reconstruction. | 0.992 |
+| **One-Class SVM** | Boundary Kernel | ✅ Implemented | `one_class_svm.pkl` | Establishing non-linear radial boundaries. | 0.792 |
+| **Local Outlier Factor** | Density-Based | ✅ Implemented | `lof.pkl` | Detecting localized sparse regions. | 0.544 |
+| **Elliptic Envelope** | Statistical | ✅ Implemented | `elliptic_envelope.pkl` | Modeling Gaussian covariance. | 0.259 |
+| **Rolling Z-Score** | Statistical | ✅ Implemented | N/A | Static baseline to prove ML necessity. | 0.211 |
+| **River HalfSpaceTrees**| Online ML | ✅ Implemented | `river_hst.pkl` | Incremental learning to counter drift. | 0.047 |
 
-Because anomalies are exceedingly rare (less than 0.1% of the data), the platform relies exclusively on Unsupervised Learning algorithms.
+*Why Isolation Forest?* While the LSTM achieved a 0.992 F1, the Isolation Forest's inference latency (~0.006ms) is radically faster, making it the superior choice for thousands of simultaneous edge connections.
 
-| Algorithm | Type | Inference Latency | F1 Score | Best For |
-| :--- | :--- | :--- | :--- | :--- |
-| **Isolation Forest** | Ensemble Tree | **< 0.01 ms** | **0.946** | Default production model. Extremely fast handling of high-dimensional rolling features. |
-| **LSTM Autoencoder** | Deep Learning | ~ 0.03 ms | 0.992 | Capturing complex temporal sequencing via PyTorch reconstruction error. |
-| **One-Class SVM** | Boundary Kernel | ~ 0.08 ms | 0.792 | Small datasets where radial basis functions easily separate normal vectors. |
-| **Elliptic Envelope**| Statistical | ~ 0.02 ms | 0.651 | Establishing simple Gaussian bounds for normally-distributed signals. |
+## 9. Feature Engineering
 
----
+Because single data points hold no context, the system calculates $O(1)$ statistical moments over a sliding window of size $N=65$:
+*   **Rolling Mean ($\mu$):** The average signal value within the window, smoothing out high-frequency noise.
+*   **Rolling Standard Deviation ($\sigma$):** A proxy for physical vibration and signal volatility.
+*   **Exponentially Weighted Moving Average (EWMA):** Prioritizes recent data points over older ones in the window.
+*   **First-Order Derivative (Rate of Change):** $\Delta x = x_t - x_{t-1}$. Detects sudden spikes regardless of the absolute value.
+*   **Lag Features:** $x_{t-1}, x_{t-2}$ to feed autoregressive algorithms.
+*   **Hour of Day / Day of Week:** Sine/Cosine encoded variables to account for factory operational cycles.
 
-## ⚙️ Installation & Setup
+## 10. Evaluation
 
-### Prerequisites
-*   [Docker Desktop](https://www.docker.com/products/docker-desktop) (Recommended for production deployment)
-*   Python 3.10+ (For local development)
-*   Node.js v18+ (For UI development)
+Standard "Accuracy" is highly misleading in anomaly detection. A model guessing "Normal" 100% of the time achieves 99.9% accuracy but misses the catastrophic failure.
+The platform uses **Windowed Evaluation**—if the model flags an alert *anywhere* within the ground-truth failure window, it is a True Positive.
 
-### Deployment via Docker (Recommended)
-This command will build the Python backend, compile the Vite/React frontend via Node, and expose the services using an Nginx reverse proxy.
+**Primary Metrics (`reports/evaluation_results.csv`):**
+*   **Precision:** What percentage of our generated alarms were actually real?
+*   **Recall:** What percentage of the real machine failures did we successfully catch?
+*   **F1-Score:** The harmonic mean of Precision and Recall. The ultimate balancing metric.
+*   **False Alarm Rate (FAR):** Critical for operator fatigue.
+*   **Inference Latency:** Measured in milliseconds per prediction.
+
+*(Note: The dynamic thresholds stored in `models/model_registry.json` are optimized strictly on the chronological Validation split to prevent data leakage, whereas the metrics in the CSV represent the held-out Test split).*
+
+## 11. Frontend Platform
+
+The React SPA utilizes TailwindCSS and WebSocket streaming to deliver a premium industrial experience.
+
+**Implemented Pages:**
+*   **Platform Overview:** System-wide operational summary.
+*   **Live Monitoring:** 50 FPS Recharts SVG graphs mapping raw values and anomaly scores in real-time.
+*   **Alert Center:** Interactive data table to Acknowledge and Resolve active alerts.
+*   **Retraining Center (Model Registry):** One-click hot-swapping between offline-trained models.
+*   **System Health (Drift):** Gauges tracking the Population Stability Index.
+*   **Demo Control Panel:** Chaos engineering buttons to inject synthetic spikes and drift.
+
+**Roadmap Pages:**
+*   Vibration Health Lab 🧭
+*   Visual Inspection Lab 🧭
+
+## 12. API Documentation
+
+The strictly-typed FastAPI backend exposes the following interfaces.
+
+### Implemented API
+*   `GET /health` - System status check.
+*   `POST /predict` - Primary ingestion vector for edge IoT devices.
+*   `GET /alerts` - Retrieves the active alert ledger.
+*   `POST /alerts/{alert_id}/resolve` - Appends operator notes and closes an alert.
+*   `GET /models/registry` - Retrieves the active Model Registry JSON.
+*   `POST /retraining/promote/{model_id}` - Hot-swaps the production model in memory.
+*   `GET /drift/status` - Returns the current PSI metric vs baseline.
+*   `POST /faults/inject` - Triggers chaos engineering stream corruption.
+*   `GET /reports/incident/{alert_id}` - Generates a binary PDF incident report.
+*   `WS /ws/stream` - Persistent bidirectional WebSocket for UI updates.
+
+**Example `POST /predict` Payload:**
+```json
+{
+  "sensor_id": "T-01",
+  "timestamp": "2026-07-05T14:32:01.000Z",
+  "value": 85.4
+}
+```
+
+## 13. Installation and Setup
+
+### Docker Deployment (Recommended)
 ```bash
 git clone https://github.com/ahmedmoatasem01/Real-Time-Anomaly-Detection-for-IoT-Sensor-Streams.git
 cd Real-Time-Anomaly-Detection-for-IoT-Sensor-Streams
-
 docker compose up --build
 ```
-*   **Frontend UI:** `http://localhost:5174`
-*   **Backend API Docs:** `http://localhost:8000/docs`
+*UI available at `http://localhost:5174`, API Docs at `http://localhost:8000/docs`.*
 
-### Local Development Setup
-If you wish to modify the Python engine or the React components directly:
-
-**1. Backend Terminal:**
+### Local Python & Node Execution
+**Backend:**
 ```bash
 python -m venv .venv
-source .venv/Scripts/activate  # Or .venv\Scripts\activate on Windows
+.\.venv\Scripts\activate
 pip install -r requirements.txt
 python -m uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-**2. Frontend Terminal:**
+**Frontend:**
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-**3. Stream Simulator Terminal:**
+**Stream Simulator:**
 ```bash
-# This script reads the NAB CSV and begins hammering the FastAPI endpoint
 python -m src.streaming.stream_simulator --speed 50 --loop
 ```
 
----
+## 14. How to Train and Evaluate Models
 
-## 📡 API Documentation
-
-The REST API is strictly typed via Pydantic models. Below is the primary ingestion vector used by edge devices (e.g., Raspberry Pi).
-
-**Endpoint:** `POST /predict`
-**Request Payload:**
-```json
-{
-  "sensor_id": "spindle-temp-01",
-  "timestamp": "2026-07-05T14:32:01.000Z",
-  "value": 85.4
-}
-```
-**Response Payload:**
-```json
-{
-  "status": "success",
-  "score": 0.84,
-  "is_anomaly": true,
-  "alert_id": 402,
-  "message": "Critical threshold breached."
-}
+The following scripts generate the artifacts in the `models/` directory and perform the F1 threshold search:
+```bash
+python -m src.models.train_baseline
+python -m src.models.train_isolation_forest
+python -m src.models.train_one_class_svm
+python -m src.models.train_lof
+python -m src.models.train_elliptic_envelope
+python -m src.models.evaluate_all
 ```
 
-*For the full OpenAPI schema, navigate to `http://localhost:8000/docs` while the server is running.*
+## 15. Testing
 
----
+The platform relies on rigorous unit testing.
+```bash
+# Run backend Python tests (pytest)
+pytest -q
 
-## 🛠️ The Stream Simulator (Chaos Engineering)
+# Verify Frontend TypeScript/Vite build
+cd frontend
+npm run build
 
-To prove system resilience without attaching a physical CNC machine, the platform ships with a multi-threaded Stream Simulator. It replays historical CSV files at accelerated speeds (`--speed 50x`).
+# Verify Docker Compose syntax
+docker compose config
+```
 
-Crucially, it supports dynamic fault injection via the UI's Demo Control Panel:
-*   **Spike Fault:** Multiplies the value by 3x instantly.
-*   **Gradual Drift:** Slowly adds an incremental constant to the signal over 60 seconds.
-*   **Sensor Freeze:** Locks the output value to a single float, instantly dropping rolling variance to 0.0.
+## 16. Demo Workflow
 
----
+To experience the full power of the platform:
+1. Start the API, Frontend, and Stream Simulator.
+2. Open the React frontend (`http://localhost:5174`).
+3. Navigate to **Live Monitoring**. Observe the blue waveform and the red anomaly score resting safely below the threshold.
+4. Navigate to the **Demo Control Panel** and click **Inject Spike Fault**.
+5. Watch the Live Monitor Anomaly Score spike violently.
+6. The screen will flash red, and a new Critical Alert will appear in the **Alert Center**.
+7. Click the Alert, transition it to "Investigating," type a resolution note, and click "Resolve".
+8. Navigate to **System Health** to observe the minor PSI drift caused by the fault.
+9. Navigate to the **Retraining Center** and practice hot-swapping the active model.
 
-## 🗺️ Multi-Modal Unified Asset Center
+## 17. Project Structure
 
-The platform has successfully expanded beyond 1D telemetry into a true "Unified Asset Center" capable of processing multiple modalities simultaneously to detect physical failures across the entire mechanical spectrum.
+```
+Real-Time-Anomaly-Detection-for-IoT-Sensor-Streams/
+├── data/                      # SQLite DB and dataset metadata
+├── docker/                    # Container definitions
+├── docs/                      # Final reports, model cards, architecture PNGs
+├── frontend/                  # React + Vite application
+│   ├── public/
+│   ├── src/                   # React components, pages, context
+│   └── package.json
+├── models/                    # Serialized .pkl files and model_registry.json
+├── reports/                   # evaluation_results.csv, drift history
+├── scripts/                   # Compilation and demo reset utilities
+├── src/
+│   ├── api/                   # FastAPI routes, Pydantic schemas, Deque buffer
+│   ├── data/                  # Pandas preprocessing pipelines
+│   ├── drift/                 # PSI calculation engine
+│   ├── features/              # Feature engineering logic
+│   ├── models/                # Scikit-learn/PyTorch training scripts
+│   └── streaming/             # Stream Simulator
+├── tests/                     # Pytest suite
+├── docker-compose.yml
+├── README.md
+└── requirements.txt
+```
 
-1.  ✅ **Phase 1: 1D Telemetry (Complete).** Low frequency temperature monitoring using the Numenta Anomaly Benchmark (NAB). Implemented via Isolation Forest and PyTorch LSTM Autoencoders.
-2.  ✅ **Phase 2: High-Frequency Vibration (Complete).** Ingesting the 20kHz NASA Bearing dataset. Edge devices compute Fast Fourier Transforms (FFT) and transmit the resulting arrays to a 1D Convolutional Neural Network for spectral anomaly detection.
-3.  ✅ **Phase 3: Visual Inspection (Complete).** Passing MVTec AD camera frames through a ResNet50 Autoencoder to generate dynamic defect heatmaps for automated assembly-line quality control.
+## 18. Roadmap
 
----
+**Near-term:**
+*   Advanced Model Comparison UI visualizations.
+*   Expansion of the Alert Incident Report PDF schemas.
+*   Migration of the SQLite database to TimescaleDB or PostgreSQL.
 
-## 📚 Full Academic Report
+**Advanced:**
+*   NASA Bearing high-frequency vibration module (Edge FFT to Cloud 1D CNN).
+*   MVTec AD image anomaly detection (ResNet50 embedded heatmaps).
+*   Multi-Modal Unified Asset Center dashboard.
 
-For an extraordinarily detailed breakdown of the project—including mathematical derivations of the algorithms, performance benchmarking, database Entity-Relationship Diagrams, and the complete evaluation methodology—please refer to the generated PDF:
+## 19. Limitations
 
-👉 **[Read the Final Project Report PDF](docs/final_report/FINAL_PROJECT_REPORT.pdf)**
+*   **Univariate Constraint:** The NAB dataset used is univariate (temperature only), preventing multivariate correlation modeling.
+*   **Simulated Stream:** The system relies on a Python simulator rather than a true MQTT publish/subscribe broker (e.g., Apache Kafka) typical of enterprise deployments.
+*   **SQLite Locking:** Concurrent high-frequency database writes may encounter locking issues; a true production environment requires a dedicated time-series database.
+*   **Vibration/Vision Modules:** Currently in the roadmap planning phase; true multi-modal integration requires physical edge hardware for heavy preprocessing.
 
----
-*Developed as a comprehensive MLOps engineering implementation.*
+## 20. Academic Report
+
+For comprehensive mathematical documentation and methodology, please review the final generated PDF:
+👉 **[FINAL_PROJECT_REPORT.pdf](docs/final_report/FINAL_PROJECT_REPORT.pdf)**
