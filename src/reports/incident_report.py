@@ -1,6 +1,5 @@
 import io
 import datetime
-from sqlalchemy.orm import Session
 from src.database.database import SessionLocal, Alert, Reading
 import matplotlib
 matplotlib.use('Agg')

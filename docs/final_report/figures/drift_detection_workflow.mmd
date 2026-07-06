@@ -1,0 +1,21 @@
+graph LR
+    classDef baseline fill:#f9f2f4,stroke:#d0a9b5,stroke-width:2px,color:#333
+    classDef process fill:#eef2f5,stroke:#9baebf,stroke-width:2px,color:#333
+    classDef alertNode fill:#fdecea,stroke:#e57373,stroke-width:2px,color:#333
+    classDef ok fill:#e8f5e9,stroke:#81c784,stroke-width:2px,color:#333
+
+    Base[Training Baseline\nFeature mean/std] --> Compare{Compare vs\nLive Window}
+    Live[Live Rolling Window\nRecent readings] --> Compare
+    Compare --> PSI[Compute PSI\n+ Mean-Shift Sigma]
+    PSI --> Status{Status Threshold}
+    Status -->|PSI < 0.1| Stable[stable]
+    Status -->|0.1 <= PSI < 0.25| Warning[warning]
+    Status -->|PSI >= 0.25| Critical[critical]
+    Warning --> Rec[Recommendation:\nMonitor closely]
+    Critical --> Rec2[Recommendation:\nRetraining recommended]
+    Rec2 --> Retrain[POST /models/retrain]
+
+    class Base baseline
+    class Live,Compare,PSI,Status process
+    class Stable ok
+    class Warning,Critical,Rec,Rec2,Retrain alertNode

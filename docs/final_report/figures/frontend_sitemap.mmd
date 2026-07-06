@@ -1,0 +1,25 @@
+graph TD
+    classDef shell fill:#ede7f6,stroke:#9575cd,stroke-width:2px,color:#333
+    classDef core fill:#e3f2fd,stroke:#64b5f6,stroke-width:2px,color:#333
+    classDef ml fill:#fff3e0,stroke:#ffb74d,stroke-width:2px,color:#333
+    classDef multimodal fill:#f9f2f4,stroke:#d0a9b5,stroke-width:2px,color:#333
+    classDef ops fill:#e8f5e9,stroke:#81c784,stroke-width:2px,color:#333
+
+    App[AppShell\nSidebar + Top Status Bar] --> Overview[Overview]
+    App --> LiveMonitor[Live Monitor]
+    App --> AlertCenter[Alert Center]
+    App --> DataExplorer[Data Explorer]
+    App --> DemoPanel[Demo Control Panel]
+    App --> ModelLab[Model Lab]
+    App --> ExperimentLog[Experiment Log]
+    App --> RetrainingCenter[Retraining Center]
+    App --> SystemHealth[System Health]
+    App --> AssetCenter[Asset Center]
+    App --> VibrationLab[Vibration Lab]
+    App --> VisionLab[Vision Lab]
+
+    class App shell
+    class Overview,LiveMonitor,AlertCenter,DataExplorer core
+    class ModelLab,ExperimentLog,RetrainingCenter ml
+    class AssetCenter,VibrationLab,VisionLab multimodal
+    class SystemHealth,DemoPanel ops

@@ -1,300 +1,368 @@
 <div align="center">
   <p>
     <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.10-blue.svg" alt="Python"></a>
-    <a href="https://fastapi.tiangolo.com/"><img src="https://img.shields.io/badge/FastAPI-0.104-009688.svg" alt="FastAPI"></a>
-    <a href="https://reactjs.org/"><img src="https://img.shields.io/badge/React-18.0-61DAFB.svg" alt="React"></a>
+    <a href="https://fastapi.tiangolo.com/"><img src="https://img.shields.io/badge/FastAPI-0.111-009688.svg" alt="FastAPI"></a>
+    <a href="https://reactjs.org/"><img src="https://img.shields.io/badge/React-19.0-61DAFB.svg" alt="React"></a>
     <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/Docker-Compose-2496ED.svg" alt="Docker"></a>
-    <a href="https://scikit-learn.org/"><img src="https://img.shields.io/badge/scikit--learn-1.3-F7931E.svg" alt="scikit-learn"></a>
+    <a href="https://scikit-learn.org/"><img src="https://img.shields.io/badge/scikit--learn-1.5-F7931E.svg" alt="scikit-learn"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
   </p>
 
-  <img src="docs/final_report/figures/high_level_arc.png" alt="High Level Architecture" width="800"/>
+  <img src="docs/final_report/figures/high_level_architecture.png" alt="High Level Architecture" width="800"/>
 
   <h1>Real-Time Industrial Anomaly Detection Platform</h1>
-  <p><strong>A real-time MLOps platform for industrial IoT anomaly detection, model comparison, alert management, drift monitoring, and predictive maintenance expansion.</strong></p>
+  <p><strong>A real-time MLOps platform for industrial IoT anomaly detection: stream simulation, multi-model comparison, alert management, drift monitoring, and a growing multi-modal (vibration + vision) extension.</strong></p>
 
-  **[👉 Read the Final Academic Report PDF](docs/final_report/FINAL_PROJECT_REPORT.pdf)**
+  **[👉 Read the Final Project Report (PDF)](docs/final_report/FINAL_PROJECT_REPORT.pdf)**
 </div>
 
 ---
 
-## 2. Project Overview
+## 1. Overview
 
-This project is a complete, real-time Machine Learning Operations (MLOps) platform designed to ingest high-frequency telemetry from industrial IoT sensors and detect mechanical anomalies before they lead to catastrophic equipment failure. 
+This is a real-time MLOps platform for industrial anomaly detection built
+around one working core loop:
 
-Rather than serving as a static dashboard, this platform is an active, stateful inference engine. It utilizes an asynchronous FastAPI backend to perform rolling feature engineering on the fly and compares the incoming data streams against a dynamic registry of unsupervised Machine Learning models. The platform seamlessly handles the entire predictive maintenance lifecycle: from raw data ingestion and anomaly thresholding to human-in-the-loop alert resolution and statistical data drift detection.
+`historical CSV → Stream Simulator → FastAPI /predict → rolling feature engineering → ML inference → SQLite → WebSocket → React frontend`
 
-## 3. Business Problem
+It replays a real industrial temperature dataset as a live sensor feed,
+scores each reading against a registry of **seven trained unsupervised
+models**, and gives an operator a live dashboard, an alert lifecycle, model
+comparison tooling, drift monitoring, and a retraining workflow — all
+genuinely implemented and evaluated, not just scaffolded.
 
-*   **Static Thresholds are Weak:** Industrial machines naturally fluctuate based on load, ambient temperature, and age. Traditional SCADA thresholds (e.g., "Alert if > 80°C") fail to capture these non-linear dynamics.
-*   **Anomalies are Rare:** In factory environments, 99.9% of data is normal. Labeled failure data is virtually non-existent, making standard supervised ML impossible.
-*   **False Alarms & Missed Alarms Matter:** A high false alarm rate causes operator fatigue (ignoring alerts), while a single missed alarm can cost millions in downtime.
-*   **Real-Time Reduces Downtime:** Detecting the microscopic statistical signatures of a failing bearing hours before it snaps allows for scheduled, rather than emergency, maintenance.
+Two additional sensor modalities — vibration (real NASA Bearing data) and
+visual inspection (a real casting-defect image dataset) — extend the same
+architecture and are wired end-to-end with their own trained models and
+frontend pages.
 
-## 4. Solution Summary
+This README states plainly what is implemented, what is partial, and what
+is roadmap-only. For the full academic writeup with formulas, figures, and
+a section-by-section breakdown, see the
+**[Final Project Report](docs/final_report/FINAL_PROJECT_REPORT.pdf)**.
 
-The platform operates as a cohesive, distributed system:
-*   **Data Pipeline:** A multi-threaded Stream Simulator replays historical data, pumping simulated real-time payloads.
-*   **Feature Engineering:** A stateful `collections.deque` buffer instantly calculates rolling standard deviations, means, and Fast Fourier Transforms.
-*   **Multi-Model ML Engine:** Supports multiple unsupervised algorithms (Isolation Forest, One-Class SVM, LSTM Autoencoders).
-*   **Model Registry:** Facilitates zero-downtime hot-swapping between models via a persistent JSON registry.
-*   **FastAPI Inference API:** An asynchronous ingestion gateway ensuring high throughput and low latency.
-*   **WebSocket Streaming:** Broadcasts real-time anomaly scores and original telemetry to connected clients.
-*   **Alert Lifecycle:** A state-machine tracking system forcing human operators to acknowledge, investigate, and resolve alerts with qualitative feedback.
-*   **React Platform:** A modern, dark-mode SPA displaying 50 FPS real-time SVGs, system health, and model metrics.
-*   **Docker Deployment:** Fully containerized for instant, reproducible deployments.
+## 2. Business Problem
 
-## 5. Current Implementation Status
+- **Static thresholds are weak.** Industrial machines fluctuate with load,
+  ambient temperature, and age. A fixed rule like "alert if > 80°C" can't
+  capture that.
+- **Anomalies are rare.** Labeled failure data is scarce, which is exactly
+  why this project uses unsupervised models rather than standard
+  supervised classification.
+- **False alarms and missed alarms both matter.** A high false-alarm rate
+  causes operator fatigue; a single missed failure can mean unplanned
+  downtime. See §8 for how differently the seven trained models actually
+  perform on this trade-off.
+- **Early detection enables scheduled, not emergency, maintenance.**
+
+## 3. Solution
+
+- **Data pipeline** — chronological split, forward-fill imputation,
+  train-only-fit scaling (`src/data/`).
+- **Feature engineering** — causal rolling statistics (`src/features/`).
+- **ML models** — 7 unsupervised models trained and fairly compared on an
+  identical held-out test split (`src/models/`).
+- **Model registry** — JSON-backed, hot-swappable production model
+  (`src/registry/`).
+- **FastAPI backend** — async ingestion, alerting, drift, retraining,
+  fault injection (`src/api/`).
+- **WebSocket streaming** — live telemetry + alert broadcast.
+- **SQLite** — readings, alerts, model runs, assets (`src/database/`).
+- **React frontend** — 12 routed pages (`frontend/`).
+- **Docker Compose** — two-service deployment (`docker-compose.yml`).
+
+## 4. Current Implementation Status
 
 | Feature | Status | Notes |
-| :--- | :--- | :--- |
-| NAB temperature stream | ✅ Implemented | Using the Numenta Anomaly Benchmark machine temperature dataset. |
-| Stream simulator | ✅ Implemented | Multi-threaded synthetic historical replay with fault injection. |
-| FastAPI backend | ✅ Implemented | Fully asynchronous ASGI endpoints. |
-| SQLite database | ✅ Implemented | Used for persistent alert lifecycle management and readings. |
-| WebSocket streaming | ✅ Implemented | Broadcasting telemetry updates at high frequency. |
-| React frontend | ✅ Implemented | Live dashboard, model lab, and alert center. |
-| Model comparison | ✅ Implemented | Automated F1 optimization offline scripts. |
-| Model registry | ✅ Implemented | Zero-downtime model promotion workflow. |
-| Alert lifecycle | ✅ Implemented | State machine: New $\rightarrow$ Acknowledged $\rightarrow$ Investigating $\rightarrow$ Resolved. |
-| Drift detection | ✅ Implemented | Population Stability Index (PSI) calculation engine. |
-| Retraining workflow | ✅ Implemented | Shadow testing of new candidate models. |
-| Synthetic fault injection | ✅ Implemented | Spikes, gradual drift, and sensor freeze capabilities. |
-| Incident report PDF | ✅ Implemented | Dynamic ReportLab PDF generation for resolved alerts. |
-| NASA Bearing vibration module | ✅ Implemented | Edge chunking and FFT pipelines are fully active. |
-| MVTec visual inspection module | ✅ Implemented | ResNet50 embedder architecture generating live heatmaps. |
-| Unified Asset Center | ✅ Implemented | Multi-modal fusion of telemetry, vibration, and vision data. |
+|---|---|---|
+| NAB temperature stream | ✅ Implemented | `data/raw/realKnownCause/machine_temperature_system_failure.csv` |
+| Stream simulator | ✅ Implemented | `src/streaming/stream_simulator.py`, replays historical data at configurable speed |
+| FastAPI backend | ✅ Implemented | Async ASGI, 20+ endpoints — see §10 |
+| SQLite database | ✅ Implemented | Readings, alerts, model runs, assets |
+| WebSocket streaming | ✅ Implemented | `/ws/stream` — live-updating charts; exact render rate not benchmarked |
+| React frontend | ✅ Implemented | 12 pages, all routed and functional |
+| Model comparison (7 models) | ✅ Implemented | `reports/evaluation_results.csv`, real metrics — see §8 |
+| Model registry / hot-swap | ✅ Implemented | `POST /models/select/{name}` reloads the active model in-process (no server restart required — not benchmarked as a formal "zero-downtime" guarantee under concurrent load) |
+| Alert lifecycle | ✅ Implemented | Real UI-reachable states are `new → investigating → resolved`; `acknowledged` is a separate flag (see full report §15) |
+| Drift detection (PSI) | ✅ Implemented | `src/drift/`, `GET /drift/status` |
+| Retraining workflow | ✅ Implemented | `POST /models/retrain`; auto-promotes if a new model beats production. A real `ImportError` bug in the promotion step was found and fixed during this project's cleanup pass |
+| Synthetic fault injection | ✅ Implemented | 5 real fault types (`spike`, `gradual_drift`, `sensor_stuck`, `missing_values`, `noise_burst`); 2 more are declared in the request schema but not verified in the generator |
+| Incident report PDF | ✅ Implemented | `GET /reports/incident/{id}`, ReportLab |
+| Vibration module (NASA Bearing) | ✅ Implemented | Real 20kHz bearing data, RMS/FFT features, Isolation Forest; no dedicated test file yet, no PR-AUC-style eval table yet |
+| Visual inspection module | ✅ Implemented | Real casting-defect image dataset (**not** MVTec AD), ResNet18 embeddings (**not** ResNet50) + Isolation Forest; no dedicated test file yet |
+| Asset Center | ✅ Implemented | Real unified list across modalities from the `Asset` table — a shared view, not a fused multi-modal score |
+| Model artifact tracking | ⚠️ Partial | Models were pickled with scikit-learn 1.7.2; `requirements.txt` pins 1.5.1 — a real version mismatch, flagged not hidden |
+| LSTM Autoencoder ROC-AUC/PR-AUC | ⚠️ Partial | F1/Precision/Recall are correct; ROC-AUC/PR-AUC in `evaluation_results.csv` are affected by a known sign-convention bug in `evaluate_all.py` — see full report §9 |
+| TimescaleDB / PostgreSQL migration | 🧭 Roadmap | Currently SQLite only |
+| Kafka / MQTT ingestion | 🧭 Roadmap | Currently a historical-data replay simulator, not a pub/sub broker |
+| Reinforcement-learning control | 🧭 Roadmap | Not started |
 
-## 6. Architecture
+## 5. Architecture
 
-**Data Flow Sequence:**
-`CSV` $\rightarrow$ `Stream Simulator` $\rightarrow$ `FastAPI /predict` $\rightarrow$ `Deque Buffer` $\rightarrow$ `Feature Engineering` $\rightarrow$ `Model Inference` $\rightarrow$ `Database Insert` $\rightarrow$ `WebSocket Broadcast` $\rightarrow$ `React Frontend`
-
-```mermaid
-flowchart LR
-    A[NAB CSV Dataset] --> B[Preprocessing Pipeline]
-    B --> C[Feature Engineering]
-    C --> D[Model Training]
-    D --> E[Model Registry]
-    F[Stream Simulator] --> G[FastAPI /predict]
-    E --> G
-    G --> H[SQLite Database]
-    G --> I[WebSocket Broadcast]
-    I --> J[React Frontend]
-    H --> J
+```
+CSV → Stream Simulator → FastAPI /predict → Rolling Buffer → Feature Engineering
+   → Model Inference → SQLite → WebSocket Broadcast → React Frontend
 ```
 
-## 7. Dataset
+![High Level Architecture](docs/final_report/figures/high_level_architecture.png)
 
-**Main Dataset: Numenta Anomaly Benchmark (NAB) - `machine_temperature_system_failure.csv`**
-*   **Selection Rationale:** Widely regarded as the industry standard for evaluating unsupervised time-series anomaly detection.
-*   **Columns:** `timestamp` (YYYY-MM-DD HH:MM:SS), `value` (Sensor reading in Fahrenheit).
-*   **Nature:** Purely chronological, un-labeled time-series data with known catastrophic mechanical failure events hidden within the timeline.
-*   **Limitations:** It is purely univariate. It lacks the multi-dimensional correlation (e.g., Temperature + Pressure + Vibration) found in true industrial deployments.
+See `docs/final_report/figures/` for the complete set of architecture,
+pipeline, and workflow diagrams (indexed in
+`docs/final_report/figures/FIGURES_INDEX.md`).
 
-**Multi-Modal Datasets Integrated:**
-*   *NASA Bearing Dataset* for 20kHz acoustic vibration analysis.
-*   *MVTec AD* for optical image anomaly detection.
+## 6. Dataset
 
-## 8. Machine Learning Models
+**Primary: Numenta Anomaly Benchmark (NAB)**,
+`realKnownCause/machine_temperature_system_failure.csv`.
 
-*Note: The following metrics reflect final test-set evaluations retrieved from `reports/evaluation_results.csv`.*
+- Columns: `timestamp`, `value` (°F).
+- Chronological, unlabeled at the point level, with NAB's own curated
+  ground-truth anomaly windows.
+- **Why chosen:** it's a standard benchmark specifically because it has
+  real ground-truth windows for unsupervised time-series detection —
+  most real industrial data has no labels at all.
+- **Limitation:** univariate — no multivariate correlation (temperature +
+  pressure + vibration) available in this dataset.
 
-| Model | Type | Status | Artifact | Purpose | F1-Score |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Isolation Forest** | Ensemble Tree | ✅ Implemented | `isolation_forest.pkl` | **Production Default.** High accuracy, ultra-low latency. | 0.946 |
-| **LSTM Autoencoder** | Deep Learning | ✅ Implemented | `lstm_autoencoder.pth` | Advanced temporal reconstruction. | 0.992 |
-| **One-Class SVM** | Boundary Kernel | ✅ Implemented | `one_class_svm.pkl` | Establishing non-linear radial boundaries. | 0.792 |
-| **Local Outlier Factor** | Density-Based | ✅ Implemented | `lof.pkl` | Detecting localized sparse regions. | 0.544 |
-| **Elliptic Envelope** | Statistical | ✅ Implemented | `elliptic_envelope.pkl` | Modeling Gaussian covariance. | 0.259 |
-| **Rolling Z-Score** | Statistical | ✅ Implemented | N/A | Static baseline to prove ML necessity. | 0.211 |
-| **River HalfSpaceTrees**| Online ML | ✅ Implemented | `river_hst.pkl` | Incremental learning to counter drift. | 0.047 |
+**Also used, by the two extended modalities:**
+- **NASA Bearing Dataset (IMS Test 2)** — real, 500 timestamped 20kHz
+  vibration snapshots (`data/raw/bearing/2nd_test/`). ✅ Implemented (§4).
+- **A real casting-defect image dataset** — 8,258 real images
+  (`data/raw/vision/`). ✅ Implemented (§4). This is **not** MVTec AD —
+  correcting an earlier documentation claim. A synthetic pill-image
+  generator also exists as a fallback data source
+  (`src/synthetic/generate_vision_data.py`) but is not what's currently
+  trained on.
 
-*Why Isolation Forest?* While the LSTM achieved a 0.992 F1, the Isolation Forest's inference latency (~0.006ms) is radically faster, making it the superior choice for thousands of simultaneous edge connections.
+## 7. Machine Learning Models
 
-## 9. Feature Engineering
+All 7 models trained and evaluated on the **same held-out test split**.
+Metrics below are copied directly from `reports/evaluation_results.csv`.
 
-Because single data points hold no context, the system calculates $O(1)$ statistical moments over a sliding window of size $N=65$:
-*   **Rolling Mean ($\mu$):** The average signal value within the window, smoothing out high-frequency noise.
-*   **Rolling Standard Deviation ($\sigma$):** A proxy for physical vibration and signal volatility.
-*   **Exponentially Weighted Moving Average (EWMA):** Prioritizes recent data points over older ones in the window.
-*   **First-Order Derivative (Rate of Change):** $\Delta x = x_t - x_{t-1}$. Detects sudden spikes regardless of the absolute value.
-*   **Lag Features:** $x_{t-1}, x_{t-2}$ to feed autoregressive algorithms.
-*   **Hour of Day / Day of Week:** Sine/Cosine encoded variables to account for factory operational cycles.
+| Model | Status | Artifact | Purpose | F1 | Precision | Recall |
+|---|---|---|---|---|---|---|
+| **Isolation Forest** | ✅ Production | `models/isolation_forest.pkl` | Fast, high-accuracy default | 0.9468 | 0.8989 | 1.0000 |
+| **LSTM Autoencoder** | ✅ Implemented | `models/lstm_autoencoder.pkl` | Highest F1; ~2.6× slower than IF | 0.9921 | 0.9883 | 0.9961 |
+| One-Class SVM | ✅ Implemented | `models/one_class_svm.pkl` | Non-linear boundary | 0.7922 | 0.6559 | 1.0000 |
+| Local Outlier Factor | ✅ Implemented | `models/lof.pkl` | Density-based | 0.5443 | 0.3739 | 1.0000 |
+| Elliptic Envelope | ✅ Implemented | `models/elliptic_envelope.pkl` | Gaussian covariance (honest negative result — 99.97% false alarm rate) | 0.2594 | 0.1490 | 1.0000 |
+| Rolling Z-score | ✅ Implemented | *(no artifact — direct threshold)* | Baseline, proves ML is worth it | 0.2119 | 0.1398 | 0.4379 |
+| River HalfSpaceTrees | ✅ Implemented | `models/river_online.pkl` | Online/incremental learning | 0.0472 | 0.0412 | 0.0552 |
 
-## 10. Evaluation
+*LSTM's ROC-AUC/PR-AUC in the raw CSV are not reliable — see the
+Implementation Status table and the full report §9 for the identified
+root cause. Its F1/Precision/Recall above are correct.*
 
-Standard "Accuracy" is highly misleading in anomaly detection. A model guessing "Normal" 100% of the time achieves 99.9% accuracy but misses the catastrophic failure.
-The platform uses **Windowed Evaluation**—if the model flags an alert *anywhere* within the ground-truth failure window, it is a True Positive.
+Why Isolation Forest is the production default despite lower F1 than
+LSTM: **latency**. 0.0067 ms vs. 0.0177 ms per prediction — the difference
+that matters once serving many concurrent readings.
 
-**Primary Metrics (`reports/evaluation_results.csv`):**
-*   **Precision:** What percentage of our generated alarms were actually real?
-*   **Recall:** What percentage of the real machine failures did we successfully catch?
-*   **F1-Score:** The harmonic mean of Precision and Recall. The ultimate balancing metric.
-*   **False Alarm Rate (FAR):** Critical for operator fatigue.
-*   **Inference Latency:** Measured in milliseconds per prediction.
+## 8. Feature Engineering
 
-*(Note: The dynamic thresholds stored in `models/model_registry.json` are optimized strictly on the chronological Validation split to prevent data leakage, whereas the metrics in the CSV represent the held-out Test split).*
+Implemented in `src/features/feature_engineering.py`, windows of 5/15/60
+steps, 22 total feature columns:
 
-## 11. Frontend Platform
+- **Rolling mean** — `μ_w(t) = (1/w)·Σ x(t-i)` — smooths noise.
+- **Rolling std** — proxy for local volatility.
+- **EWMA** — `EWMA(t) = α·x(t) + (1-α)·EWMA(t-1)`, `α = 2/(w+1)` — weights
+  recent points more.
+- **Lag features** (`lag_1`, `lag_2`, `lag_3`) — short-horizon history.
+- **Rate of change** — `x(t) - x(t-1)` — catches sudden spikes.
+- **Z-score** — `(x(t) - μ_w(t)) / (σ_w(t) + ε)` — deviation in local
+  standard deviations; this is exactly what the Rolling Z-score baseline
+  model thresholds.
 
-The React SPA utilizes TailwindCSS and WebSocket streaming to deliver a premium industrial experience.
+All features are computed causally (no future data), verified by
+`tests/test_leakage.py`. **Correction:** an earlier version of this README
+claimed hour-of-day/day-of-week cyclical encodings — these do not exist in
+the current feature engineering code and have been removed from this
+description.
 
-**Implemented Pages:**
-*   **Platform Overview:** System-wide operational summary.
-*   **Live Monitoring:** 50 FPS Recharts SVG graphs mapping raw values and anomaly scores in real-time.
-*   **Alert Center:** Interactive data table to Acknowledge and Resolve active alerts.
-*   **Retraining Center (Model Registry):** One-click hot-swapping between offline-trained models.
-*   **System Health (Drift):** Gauges tracking the Population Stability Index.
-*   **Demo Control Panel:** Chaos engineering buttons to inject synthetic spikes and drift.
+## 9. API
 
-**Multi-Modal Lab Pages:**
-*   Vibration Health Lab ✅
-*   Visual Inspection Lab ✅
+**Implemented** (`src/api/main.py` + included routers):
 
-## 12. API Documentation
-
-The strictly-typed FastAPI backend exposes the following interfaces.
-
-### Implemented API
-*   `GET /health` - System status check.
-*   `POST /predict` - Primary ingestion vector for edge IoT devices.
-*   `GET /alerts` - Retrieves the active alert ledger.
-*   `POST /alerts/{alert_id}/resolve` - Appends operator notes and closes an alert.
-*   `GET /models/registry` - Retrieves the active Model Registry JSON.
-*   `POST /retraining/promote/{model_id}` - Hot-swaps the production model in memory.
-*   `GET /drift/status` - Returns the current PSI metric vs baseline.
-*   `POST /faults/inject` - Triggers chaos engineering stream corruption.
-*   `GET /reports/incident/{alert_id}` - Generates a binary PDF incident report.
-*   `WS /ws/stream` - Persistent bidirectional WebSocket for UI updates.
-
-**Example `POST /predict` Payload:**
-```json
-{
-  "sensor_id": "T-01",
-  "timestamp": "2026-07-05T14:32:01.000Z",
-  "value": 85.4
-}
+```
+GET  /health                        Liveness check
+POST /predict                       Ingest one reading
+POST /predict/batch                 Ingest many readings
+POST /predict/ensemble              Score against all registered models
+GET  /alerts                        List alerts
+PUT  /alerts/{id}/ack                Acknowledge
+PUT  /alerts/{id}/status             Change status (new/investigating/resolved)
+PUT  /alerts/{id}/feedback           Record true/false-positive feedback
+PUT  /alerts/{id}/replay             Replay alert context
+GET  /reports/incident/{alert_id}   PDF incident report
+GET  /models, /models/registry, /models/comparison   Registry reads
+POST /models/select/{name}          Hot-swap production model
+POST /models/retrain                Trigger retraining (auto-promotes)
+GET  /drift/status, /drift/check, /drift/history      Drift monitoring
+POST /faults/inject, /faults/stop   Synthetic fault control
+GET  /faults/status, /faults/types
+GET  /experiments                   Training run history
+GET  /data/summary, /system/status, /metrics, /readings
+WS   /ws/stream                     Live telemetry + alert broadcast
+/vibration/*                        Vibration module (sample, ws/stream)
+/image/*                            Vision module (gallery, analyze)
+/assets/*                           Asset Center
 ```
 
-## 13. Installation and Setup
+**Documented before but does not exist:** `POST /retraining/promote/{model_id}`.
+Promotion actually happens automatically inside the retraining job itself;
+manual hot-swapping of any model (independent of retraining) is
+`POST /models/select/{name}` above.
 
-### Docker Deployment (Recommended)
+## 10. Frontend
+
+React 19 + TypeScript + Vite + TailwindCSS + TanStack Query + Recharts +
+framer-motion. All pages are real and routed in `frontend/src/App.tsx`:
+
+Overview · Live Monitor · Alert Center · Data Explorer · Demo Control
+Panel · Model Lab · Experiment Log · Retraining Center · System Health ·
+Asset Center · Vibration Lab · Vision Lab
+
+**Honest caveat:** the Vibration Lab, Vision Lab, and Asset Center pages
+currently call their backend with a hardcoded `localhost:8000` URL instead
+of the shared, environment-configured API client the other 9 pages use —
+they work against the default local setup but need a small fix to point
+at a different host.
+
+## 11. Installation
+
+### Docker (recommended)
 ```bash
 git clone https://github.com/ahmedmoatasem01/Real-Time-Anomaly-Detection-for-IoT-Sensor-Streams.git
 cd Real-Time-Anomaly-Detection-for-IoT-Sensor-Streams
 docker compose up --build
 ```
-*UI available at `http://localhost:5174`, API Docs at `http://localhost:8000/docs`.*
+UI at `http://localhost:3000`, API docs at `http://localhost:8000/docs`.
 
-### Local Python & Node Execution
-**Backend:**
+### Backend (local)
 ```bash
 python -m venv .venv
-.\.venv\Scripts\activate
+.venv\Scripts\activate        # Windows
 pip install -r requirements.txt
 python -m uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-**Frontend:**
+### Frontend (local)
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-**Stream Simulator:**
+### Stream simulator
 ```bash
 python -m src.streaming.stream_simulator --speed 50 --loop
 ```
 
-## 14. How to Train and Evaluate Models
+## 12. Training and Evaluation Commands
 
-The following scripts generate the artifacts in the `models/` directory and perform the F1 threshold search:
 ```bash
 python -m src.models.train_baseline
 python -m src.models.train_isolation_forest
 python -m src.models.train_one_class_svm
 python -m src.models.train_lof
 python -m src.models.train_elliptic_envelope
-python -m src.models.evaluate_all
+python -m src.models.train_lstm_autoencoder
+python -m src.models.train_river_online
+python -m src.models.evaluate_all          # writes reports/evaluation_results.csv
+
+python -m src.vibration.train              # vibration module
+python -m src.image.train                  # vision module
 ```
 
-## 15. Testing
+## 13. Testing
 
-The platform relies on rigorous unit testing.
 ```bash
-# Run backend Python tests (pytest)
-pytest -q
+pytest -q                    # 33 tests, 11 files — currently all passing
+python -m pytest              # equivalent
 
-# Verify Frontend TypeScript/Vite build
-cd frontend
-npm run build
+cd frontend && npm run build  # TypeScript + Vite build — currently passing
 
-# Verify Docker Compose syntax
-docker compose config
+docker compose config          # validate compose syntax
 ```
 
-## 16. Demo Workflow
+Not yet covered by a dedicated test file: the vibration module, vision
+module, Asset Center, model registry, and retraining pipeline (they are
+functional — see §4 — just untested by an automated suite so far).
 
-To experience the full power of the platform:
-1. Start the API, Frontend, and Stream Simulator.
-2. Open the React frontend (`http://localhost:5174`).
-3. Navigate to **Live Monitoring**. Observe the blue waveform and the red anomaly score resting safely below the threshold.
-4. Navigate to the **Demo Control Panel** and click **Inject Spike Fault**.
-5. Watch the Live Monitor Anomaly Score spike violently.
-6. The screen will flash red, and a new Critical Alert will appear in the **Alert Center**.
-7. Click the Alert, transition it to "Investigating," type a resolution note, and click "Resolve".
-8. Navigate to **System Health** to observe the minor PSI drift caused by the fault.
-9. Navigate to the **Retraining Center** and practice hot-swapping the active model.
+## 14. Demo Workflow
 
-## 17. Project Structure
+1. Start the API, frontend, and stream simulator (§11).
+2. Open the frontend at `http://localhost:3000` (or `:5174` in dev mode)
+   and go to **Live Monitor** — observe the waveform and anomaly score.
+3. Go to **Demo Control Panel**, click **Inject Spike Fault**.
+4. Watch the anomaly score spike; a new alert appears in **Alert Center**.
+5. Open the alert, move it to `investigating`, add a note, move it to
+   `resolved`.
+6. Download its incident report PDF.
+7. Check **System Health** for the resulting drift shift.
+8. Try **Retraining Center** → trigger a retraining run → see it logged
+   in **Experiment Log**.
+
+## 15. Project Structure
 
 ```
 Real-Time-Anomaly-Detection-for-IoT-Sensor-Streams/
-├── data/                      # SQLite DB and dataset metadata
-├── docker/                    # Container definitions
-├── docs/                      # Final reports, model cards, architecture PNGs
+├── data/                      # Raw + processed datasets, SQLite files
+├── docker/                    # API Dockerfile
+├── docs/
+│   ├── final_report/          # Final report (.md + .pdf), figures, sections
+│   ├── model_cards/            # Per-model documentation
+│   └── archive/                # Superseded planning documents
 ├── frontend/                  # React + Vite application
-│   ├── public/
-│   ├── src/                   # React components, pages, context
-│   └── package.json
-├── models/                    # Serialized .pkl files and model_registry.json
-├── reports/                   # evaluation_results.csv, drift history
-├── scripts/                   # Compilation and demo reset utilities
+├── models/                    # Trained artifacts + model_registry.json
+├── reports/                   # evaluation_results.csv, drift/experiment history
+├── scripts/                   # Diagram/report/figure generation, demo reset
 ├── src/
-│   ├── api/                   # FastAPI routes, Pydantic schemas, Deque buffer
-│   ├── data/                  # Pandas preprocessing pipelines
-│   ├── drift/                 # PSI calculation engine
-│   ├── features/              # Feature engineering logic
-│   ├── models/                # Scikit-learn/PyTorch training scripts
-│   └── streaming/             # Stream Simulator
-├── tests/                     # Pytest suite
+│   ├── api/                   # FastAPI app, routers, inference service
+│   ├── data/, features/       # Preprocessing, feature engineering
+│   ├── models/                # Training scripts + evaluate_all.py
+│   ├── registry/, drift/, retraining/, synthetic/, reports/
+│   ├── vibration/, image/     # Extended modalities
+│   ├── database/, streaming/, utils/
+├── tests/                     # pytest suite (11 files, 33 tests)
 ├── docker-compose.yml
-├── README.md
 └── requirements.txt
 ```
 
-## 18. Roadmap
+Full folder-by-folder guide: `docs/PROJECT_STRUCTURE.md`.
+
+## 16. Roadmap
 
 **Near-term:**
-*   Advanced Model Comparison UI visualizations.
-*   Expansion of the Alert Incident Report PDF schemas.
-*   Migration of the SQLite database to TimescaleDB or PostgreSQL.
+- Fix the LSTM ROC-AUC/PR-AUC sign bug in `evaluate_all.py`.
+- Dedicated tests for vibration, vision, asset, registry, retraining.
+- Route the three hardcoded-URL frontend pages through the shared API client.
+- Re-pin `requirements.txt` to match the scikit-learn version models were trained with.
 
 **Advanced:**
-*   Distributed multi-node edge deployments.
-*   Integration with Apache Kafka for enterprise event streaming.
-*   Reinforcement Learning for automated control corrections.
+- Migrate SQLite → PostgreSQL/TimescaleDB.
+- Replace the stream simulator with real Kafka/MQTT ingestion.
+- Multivariate correlation modeling across sensor channels.
+- Reinforcement learning for automated control corrections.
 
-## 19. Limitations
+## 17. Limitations
 
-*   **Univariate Constraint:** The NAB dataset used is univariate (temperature only), preventing multivariate correlation modeling.
-*   **Simulated Stream:** The system relies on a Python simulator rather than a true MQTT publish/subscribe broker (e.g., Apache Kafka) typical of enterprise deployments.
-*   **SQLite Locking:** Concurrent high-frequency database writes may encounter locking issues; a true production environment requires a dedicated time-series database.
-*   **Edge Hardware Simulation:** The Vibration and Vision modules are currently run on simulated edge devices in software; true integration requires physical edge hardware (e.g. NVIDIA Jetson) for heavy preprocessing.
+- Primary dataset is univariate (temperature only).
+- "Live" data is a historical replay, not a true pub/sub ingestion path.
+- SQLite may hit write-locking limits under heavy concurrent load.
+- Model artifacts were pickled with a newer scikit-learn than
+  `requirements.txt` currently pins.
+- Vibration/vision modules have no dedicated automated tests yet and no
+  PR-AUC-style evaluation table comparable to §7.
+- No claim of a specific measured frame rate or a formal zero-downtime
+  guarantee is made anywhere in this document — both were removed from
+  this description because neither has been benchmarked.
 
-## 20. Academic Report
+## 18. Final Report
 
-For comprehensive mathematical documentation and methodology, please review the final generated PDF:
-👉 **[FINAL_PROJECT_REPORT.pdf](docs/final_report/FINAL_PROJECT_REPORT.pdf)**
+The complete, section-by-section academic report — including every
+formula explained (rolling mean, std, EWMA, z-score, PSI, RMS, FFT,
+autoencoder reconstruction error), full API/JSON examples, and every
+correction noted above with its source — is here:
+
+**[docs/final_report/FINAL_PROJECT_REPORT.pdf](docs/final_report/FINAL_PROJECT_REPORT.pdf)**
+(source: [FINAL_PROJECT_REPORT.md](docs/final_report/FINAL_PROJECT_REPORT.md))

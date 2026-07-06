@@ -1,0 +1,23 @@
+graph LR
+    classDef data fill:#f9f2f4,stroke:#d0a9b5,stroke-width:2px,color:#333
+    classDef proc fill:#eef2f5,stroke:#9baebf,stroke-width:2px,color:#333
+    classDef ml fill:#fff3e0,stroke:#ffb74d,stroke-width:2px,color:#333
+    classDef api fill:#e3f2fd,stroke:#64b5f6,stroke-width:2px,color:#333
+    classDef db fill:#e8f5e9,stroke:#81c784,stroke-width:2px,color:#333
+    classDef ui fill:#ede7f6,stroke:#9575cd,stroke-width:2px,color:#333
+
+    A[Data Source\nNAB CSV / Stream Simulator] --> B[Preprocessing\nSort, Impute, Split, Scale]
+    B --> C[Feature Engineering\nRolling stats, lag, z-score]
+    C --> D[Model Training\n7 unsupervised models]
+    D --> E[Model Registry\nmodel_registry.json]
+    E --> F[FastAPI /predict]
+    F --> G[(SQLite Database)]
+    F --> H[WebSocket Broadcast]
+    H --> I[React Frontend]
+
+    class A data
+    class B,C proc
+    class D,E ml
+    class F api
+    class G db
+    class I ui

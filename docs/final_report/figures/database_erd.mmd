@@ -1,0 +1,53 @@
+erDiagram
+    READINGS {
+        integer id PK
+        string ts
+        string sensor_id
+        float value
+        float anomaly_score
+        boolean is_anomaly
+        string severity
+        string reason
+        string model
+        float inference_ms
+        datetime created_at
+    }
+
+    ALERTS {
+        integer id PK
+        integer reading_id FK
+        string ts
+        string sensor_id
+        string severity
+        float score
+        string reason
+        boolean acknowledged
+        string status "new, investigating, resolved"
+        string operator_note
+        datetime resolved_at
+        string feedback
+    }
+
+    MODEL_RUNS {
+        integer id PK
+        string model
+        string trained_at
+        float precision
+        float recall
+        float f1
+        float pr_auc
+        float roc_auc
+        float threshold
+        string notes
+    }
+
+    ASSETS {
+        string id PK
+        string name
+        string modality
+        string status
+        datetime last_anomaly_at
+        datetime created_at
+    }
+
+    READINGS ||--o{ ALERTS : "triggers"

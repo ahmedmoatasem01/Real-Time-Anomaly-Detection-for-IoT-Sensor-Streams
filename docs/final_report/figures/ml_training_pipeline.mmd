@@ -1,0 +1,15 @@
+graph LR
+    classDef data fill:#f9f2f4,stroke:#d0a9b5,stroke-width:2px,color:#333
+    classDef process fill:#eef2f5,stroke:#9baebf,stroke-width:2px,color:#333
+    classDef output fill:#e8f5e9,stroke:#81c784,stroke-width:2px,color:#333
+
+    Train[Train Split 50%\nFit on normal rows only] --> Val[Validation Split 20%\nTune per-model threshold]
+    Val --> ThreshJSON[(threshold_&lt;model&gt;.json\nselection_metrics, split=validation)]
+    ThreshJSON --> Test[Test Split 30%\nHeld-out, never used for tuning]
+    Test --> EvalAll[evaluate_all.py\nPrecision, Recall, F1, ROC-AUC, PR-AUC, FAR, Latency]
+    EvalAll --> CSV[(reports/evaluation_results.csv\nsplit=test, ranked by PR-AUC)]
+    EvalAll --> Registry[(models/model_registry.json\ntest_metrics per model)]
+
+    class Train,Val,Test data
+    class EvalAll process
+    class ThreshJSON,CSV,Registry output

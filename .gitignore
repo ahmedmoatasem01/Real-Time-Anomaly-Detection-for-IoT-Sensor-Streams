@@ -27,6 +27,7 @@ data/sample_stream/*
 # ML Models and Artifacts
 models/*.pkl
 models/*.pt
+models/*.pth
 models/*.json
 !models/model_registry.json
 reports/figures/*

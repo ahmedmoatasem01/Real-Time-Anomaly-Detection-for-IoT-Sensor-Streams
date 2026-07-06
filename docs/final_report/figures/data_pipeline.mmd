@@ -3,12 +3,14 @@ graph LR
     classDef process fill:#eef2f5,stroke:#9baebf,stroke-width:2px,color:#333
     classDef output fill:#e8f5e9,stroke:#81c784,stroke-width:2px,color:#333
     
-    Raw[(Raw CSV\nNAB Data)] --> Sort[Sort Chronologically\nby Timestamp]
+    Raw[(Raw CSV\nNAB Data)] --> Label[Label Ground-Truth\nAnomaly Windows]
+    Label --> Sort[Sort Chronologically\nby Timestamp]
     Sort --> Impute[Missing Value Imputation\nForward-Fill]
     Impute --> Split[Temporal Data Split\n50% Train, 20% Val, 30% Test]
     Split --> FitScale[Fit StandardScaler\nStrictly on Train Split]
     FitScale --> TransScale[Transform Val/Test\nusing Train Params]
-    TransScale --> Save[(Processed Datasets\nReady for Inference)]
-    
-    class Raw,Save data
-    class Sort,Impute,Split,FitScale,TransScale process
+    TransScale --> Save[(Processed CSV\ndata/processed/nab_processed.csv)]
+    Save --> Stream[(Stream Simulator Source\ndata/sample_stream/test_stream.csv)]
+
+    class Raw,Save,Stream data
+    class Label,Sort,Impute,Split,FitScale,TransScale process

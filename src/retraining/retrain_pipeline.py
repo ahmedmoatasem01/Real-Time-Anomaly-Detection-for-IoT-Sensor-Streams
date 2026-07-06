@@ -1,11 +1,11 @@
 import os
+import sys
 import subprocess
 import pandas as pd
-from sqlalchemy.orm import Session
 from src.database.database import SessionLocal, Reading
 from src.utils.config import get_settings
 from src.utils.logger import get_logger
-from src.registry.model_registry import load_registry
+from src.registry.model_registry import list_models, set_production
 import json
 
 logger = get_logger("retrain_pipeline")
@@ -67,11 +67,11 @@ def run_retraining():
         
     # 2. Train models
     logger.info("Training Isolation Forest...")
-    subprocess.run([".venv\\Scripts\\python.exe", "-m", "src.models.train_isolation_forest"], check=False)
-    
+    subprocess.run([sys.executable, "-m", "src.models.train_isolation_forest"], check=False)
+
     # 3. Evaluate models
     logger.info("Evaluating models...")
-    subprocess.run([".venv\\Scripts\\python.exe", "-m", "src.models.evaluate_all"], check=False)
+    subprocess.run([sys.executable, "-m", "src.models.evaluate_all"], check=False)
     
     # 4. Find the best model in evaluation_results.csv
     if not os.path.exists("reports/evaluation_results.csv"):
@@ -85,18 +85,15 @@ def run_retraining():
     best_model_name = results_df.iloc[0]["Model"]
     
     # Get current production model
-    registry = load_registry()
-    current_prod = next((k for k, v in registry.items() if v.get("is_production")), None)
-    
+    registry = list_models()
+    current_prod = next((entry.get("name") for entry in registry if entry.get("is_production")), None)
+
     if current_prod != best_model_name:
         logger.info(f"Promoting {best_model_name} to production (replacing {current_prod}).")
-        # In actual system, we'd hit /models/select/{name} but we can just use registry directly
-        from src.registry.model_registry import set_production
-        from src.api.inference_service import get_inference_service
         set_production(best_model_name)
-        
-        # Refresh inference service
-        svc = get_inference_service()
-        svc.load_artifacts()
+
+        # Refresh the running app's inference service so the new model is served immediately
+        from src.api.main import inference_service
+        inference_service.load_artifacts()
         
     return True

@@ -43,4 +43,4 @@ def test_explain_anomaly():
     
     # Explanation should pinpoint roll_std_15
     assert "roll_std_15" in reason
-    assert "20.0σ" in reason
+    assert "20.0 std devs" in reason

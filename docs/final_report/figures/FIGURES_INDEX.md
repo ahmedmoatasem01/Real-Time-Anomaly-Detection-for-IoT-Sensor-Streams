@@ -1,0 +1,68 @@
+# Figures Index
+
+Every figure below was generated from real, committed repository data — either
+the actual codebase's verified architecture (structural/workflow diagrams) or
+`reports/evaluation_results.csv` / re-loaded trained models on the real test
+split (metric charts). Nothing here is simulated or invented. Where a number
+looked suspicious, it's called out explicitly rather than smoothed over.
+
+## 1. Architecture / workflow diagrams (Mermaid source → PNG via `npx mmdc`)
+
+| Figure | Shows | Source | Status |
+|---|---|---|---|
+| `high_level_architecture.png` | Data source → preprocessing → feature engineering → model training → registry → FastAPI → SQLite → WebSocket → React frontend | `src/api/main.py`, `src/data/`, `src/features/`, `src/models/`, `src/registry/model_registry.py` | New. Complements the existing, more detailed `high_level_arc.png` (referenced by README §"Architecture" — left untouched). |
+| `data_pipeline.png` | Raw CSV → label ground-truth windows → clean → split → scale → processed CSV → stream-simulator source | `src/data/preprocessing.py`, `data/raw/realKnownCause/machine_temperature_system_failure.csv`, `data/processed/nab_processed.csv` | **Updated existing file** — added the labeling step and the sample-stream endpoint that were requested but missing from the original diagram. |
+| `feature_engineering_pipeline.png` | value_scaled → rolling mean/std/min/max (windows 5/15/60) + lag_1..3 + roc → EWMA + z-score per window → 22-column feature vector | `src/features/feature_engineering.py` (`make_features`), `models/feature_columns.json` | New. Exact feature names verified against the real code, not paraphrased. |
+| `ml_training_pipeline.png` | Train split (50%, normal rows only) → validation split (20%, threshold tuning) → test split (30%, held out) → `evaluate_all.py` → `evaluation_results.csv` + `model_registry.json` | `src/models/evaluate_all.py`, `models/threshold_*.json` (`selection_metrics.split="validation"`) | New. |
+| `model_lifecycle.png` | Train → evaluate → register → promote → serve → monitor (drift) → retrain | *(pre-existing)* | Unchanged — already accurate, matches `src/retraining/retrain_pipeline.py` and `src/registry/model_registry.py`. |
+| `inference_sequence.png` | Simulator → `/predict` → rolling buffer (maxlen 65) → feature engineering → model → threshold check → DB insert → WebSocket broadcast | *(pre-existing)* | Unchanged — already accurate. Scaling is folded into the "Feature Engineering" step rather than shown as a separate participant. |
+| `alert_lifecycle.png` | New → Acknowledged → Investigating → Resolved / False Alarm | *(pre-existing)* | Unchanged. **Note:** this is a slight idealization — the real, UI-reachable `status` field (verified in `frontend/src/pages/AlertCenter.tsx`) only offers `new` → `investigating` → `resolved`; "acknowledged" is a separate boolean flag, not a `status` value, and `"false_alarm"` (checked in `src/api/main.py:314`) has no reachable UI control that sends it. Flagged here rather than rewritten, since editing it is out of this task's scope. |
+| `drift_detection_workflow.png` | Training baseline vs. live window → PSI + mean-shift sigma → stable / warning / critical → "Retraining recommended" | `src/drift/drift_detector.py`, `src/drift/drift_service.py`, `reports/drift_status.json` (its literal `"recommendation": "Retraining recommended"` string is quoted directly) | New. |
+| `retraining_workflow.png` | `POST /models/retrain` → export recent readings → train candidate → `evaluate_all.py` → compare vs. current production → promote (or no-op) | `src/retraining/retrain_pipeline.py` (`run_retraining`) | New. Matches the pipeline exactly, including the no-promotion branch when the candidate isn't better. |
+| `synthetic_fault_injection_workflow.png` | Operator selects fault → `POST /faults/inject` → `FaultGenerator` modifies stream → `/predict` scores it → alert appears | `src/synthetic/fault_generator.py` (`FAULT_TYPES = spike, gradual_drift, sensor_stuck, missing_values, noise_burst`), `src/synthetic/synthetic_stream.py` | New. Real fault-type names, not placeholders. |
+| `database_erd.png` | `Reading`, `Alert` (FK → Reading), `ModelRun`, `Asset` | `src/database/database.py` (read directly, field-by-field) | New. **Supersedes the older `db_erd.png`** in accuracy — that pre-existing diagram calls the model table `MODELS` with fields (`uuid`, `pkl_filepath`, `is_production`) that don't match the real `ModelRun` table, and omits the `Asset` table entirely. Old file left in place (not deleted); new file is the accurate reference. No `retraining_runs` table exists in the codebase — not included. |
+| `frontend_sitemap.png` | AppShell → 12 routed pages (Overview, Live Monitor, Alert Center, Data Explorer, Demo Panel, Model Lab, Experiment Log, Retraining Center, System Health, Asset Center, Vibration Lab, Vision Lab) | `frontend/src/App.tsx` (routes read directly) | New. |
+
+## 2. Metric charts (matplotlib, generated by `scripts/generate_report_figures.py`)
+
+| Figure | Shows | Source data | Status |
+|---|---|---|---|
+| `model_comparison_bar.png` | Precision, Recall, F1, PR-AUC per model | `reports/evaluation_results.csv` (test split) | New copy in `docs/final_report/figures/` (a similar chart already exists in `reports/figures/` from `evaluate_all.py`'s own run — this one lives alongside the other report figures and uses identical real numbers). |
+| `false_alarm_rate_comparison.png` | False Alarm Rate per model, sorted, color-coded | `reports/evaluation_results.csv` → `False Alarm Rate` column | New. |
+| `inference_latency_comparison.png` | Avg inference time per reading, log scale | `reports/evaluation_results.csv` → `Avg Inference Time (ms)` column | New. |
+| `pr_curve_all_models.png` | Overlaid Precision-Recall curves, all 7 models | Real trained models (`models/*.pkl`) re-scored on the real test split (`data/processed/nab_processed.csv`, `split == "test"`) — same methodology as `src/models/evaluate_all.py`, just persisted as a combined overlay (that script computes these same arrays but never saves them together) | Generated — all 7 models scored successfully, none skipped. |
+| `roc_curve_all_models.png` | Overlaid ROC curves, all 7 models | Same as above | Generated — all 7 models scored successfully, none skipped. |
+
+### Cross-check against `reports/evaluation_results.csv`
+
+Re-derived ROC-AUC values matched the committed CSV almost exactly for 6 of 7
+models (Isolation Forest 0.999, One-Class SVM 1.000, LOF 0.998/0.998,
+Elliptic Envelope 0.798/0.798, Rolling Z-score 0.479/0.479, River HST
+0.102/0.102) — confirming the re-scoring methodology is correct.
+
+**One model did not match: LSTM Autoencoder.** The committed CSV shows
+ROC-AUC = `1.2259e-05` (effectively zero); the re-derived curve shows
+ROC-AUC = **1.000** (the best of all 7 models, consistent with its F1 = 0.992).
+
+Root cause (found while building this figure, not assumed): in
+`src/models/evaluate_all.py`, LSTM's raw score convention is "lower value =
+more anomalous" (it's negative reconstruction error), and the code correctly
+accounts for this when turning scores into predictions
+(`preds = (lstm_scores < thresh)`), but `_score_model()` passes the
+**unflipped** `lstm_scores` straight into `roc_auc_score()` and
+`precision_recall_curve()`, both of which assume "higher score = positive
+class." That sign mismatch is what produces the near-zero AUC in the
+committed CSV. `precision_recall_curve`-derived PR-AUC for LSTM in the CSV
+(`0.0785`) is affected by the same bug.
+
+This figure-generation pass did **not** modify `evaluate_all.py` or
+regenerate `reports/evaluation_results.csv` — that's a source-code fix with
+downstream effects on the model ranking and README's model table, outside
+the scope of "generate figures." Flagging it here as a concrete, evidenced
+finding for a decision on whether/when to fix it.
+
+## 3. Missing metrics / limitations
+
+- No `retraining_runs` database table exists, so it's omitted from `database_erd.png` (the ERD only reflects what's actually in `src/database/database.py`).
+- Raw per-sample prediction arrays are not persisted anywhere in the repo (`evaluate_all.py` computes them transiently and only saves final PNGs/summary CSV), so the PR/ROC overlay figures required re-loading the real models and re-scoring the real test split rather than reading a pre-saved scores file. This is why `scripts/generate_report_figures.py` exists as a standalone, reusable script rather than a one-off.
+- Nothing was skipped for "data doesn't exist" reasons — all 17 requested figures were produced (8 new diagrams, 1 updated diagram, 3 pre-existing diagrams confirmed accurate and left as-is, 5 new metric charts).

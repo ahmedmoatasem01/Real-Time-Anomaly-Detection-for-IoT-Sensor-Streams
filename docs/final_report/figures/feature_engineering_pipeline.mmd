@@ -1,0 +1,20 @@
+graph LR
+    classDef input fill:#f9f2f4,stroke:#d0a9b5,stroke-width:2px,color:#333
+    classDef process fill:#eef2f5,stroke:#9baebf,stroke-width:2px,color:#333
+    classDef output fill:#e8f5e9,stroke:#81c784,stroke-width:2px,color:#333
+
+    V[Scaled Value\nvalue_scaled] --> Roll[Rolling Windows 5/15/60\nmean, std, min, max]
+    V --> Lag[Lag Features\nlag_1, lag_2, lag_3]
+    V --> ROC[Rate of Change\nroc = diff]
+    Roll --> EWMA[EWMA per window\newma_5 / 15 / 60]
+    Roll --> Z[Z-score per window\nzscore_5 / 15 / 60]
+    Lag --> Vec[Feature Vector\n22 columns]
+    ROC --> Vec
+    Roll --> Vec
+    EWMA --> Vec
+    Z --> Vec
+    Vec --> Model[Model Input\nfeature_columns.json order]
+
+    class V input
+    class Roll,Lag,ROC,EWMA,Z process
+    class Vec,Model output

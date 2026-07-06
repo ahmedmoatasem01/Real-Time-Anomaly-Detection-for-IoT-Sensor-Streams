@@ -1,0 +1,18 @@
+graph LR
+    classDef ui fill:#ede7f6,stroke:#9575cd,stroke-width:2px,color:#333
+    classDef process fill:#eef2f5,stroke:#9baebf,stroke-width:2px,color:#333
+    classDef api fill:#e3f2fd,stroke:#64b5f6,stroke-width:2px,color:#333
+    classDef alertNode fill:#fdecea,stroke:#e57373,stroke-width:2px,color:#333
+
+    User[Operator selects fault\nDemo Control Panel] --> Post[POST /faults/inject\nspike / gradual_drift / sensor_stuck /\nmissing_values / noise_burst]
+    Post --> Gen[FaultGenerator\nmodifies live stream values]
+    Gen --> Sim[Stream Simulator\nemits corrupted readings]
+    Sim --> Predict[FastAPI /predict\nscores corrupted reading]
+    Predict --> Score{Score > Threshold?}
+    Score -->|Yes| Alert[Alert created\nbroadcast via WebSocket]
+    Alert --> UI[Alert Center flashes\nnew critical alert]
+
+    class User ui
+    class Post,Gen,Sim process
+    class Predict,Score api
+    class Alert,UI alertNode
